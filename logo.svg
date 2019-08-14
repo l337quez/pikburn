@@ -15,7 +15,10 @@
    version="1.1"
    id="svg604"
    inkscape:version="0.92.4 5da689c313, 2019-01-14"
-   sodipodi:docname="logo.svg">
+   sodipodi:docname="logo.svg"
+   inkscape:export-filename="/home/ronal/git/pikburn/logo.svg.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96">
   <defs
      id="defs598" />
   <sodipodi:namedview
@@ -26,16 +29,16 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.24748737"
-     inkscape:cx="541.5403"
+     inkscape:cx="-351.43455"
      inkscape:cy="510.18388"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="587"
-     inkscape:window-height="446"
-     inkscape:window-x="622"
-     inkscape:window-y="280"
-     inkscape:window-maximized="0" />
+     inkscape:window-width="1440"
+     inkscape:window-height="835"
+     inkscape:window-x="0"
+     inkscape:window-y="36"
+     inkscape:window-maximized="1" />
   <metadata
      id="metadata601">
     <rdf:RDF>
@@ -57,10 +60,14 @@
        id="path460"
        cx="105.53324"
        cy="138.44646"
-       r="77.240898" />
+       r="77.240898"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" />
     <g
        transform="matrix(0.89137488,0,0,-1.0039295,145.56108,144.82768)"
-       id="g3756-8">
+       id="g3756-8"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96">
       <path
          inkscape:connector-curvature="0"
          id="path3758-9"
@@ -69,7 +76,9 @@
     </g>
     <g
        transform="matrix(0.79033151,0,0,-0.79033151,149.0763,107.84556)"
-       id="g3848-2">
+       id="g3848-2"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96">
       <path
          inkscape:connector-curvature="0"
          id="path3850-7"
@@ -188,7 +197,9 @@
     </g>
     <g
        transform="matrix(1.0277489,0,0,-0.8397898,132.77209,153.48986)"
-       id="g3852-0">
+       id="g3852-0"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96">
       <path
          inkscape:connector-curvature="0"
          id="path3854-9"
@@ -198,7 +209,9 @@
     <g
        transform="matrix(0.79033151,0,0,-0.79033151,154.62678,193.40203)"
        id="g3844-9"
-       style="fill:#808080">
+       style="fill:#808080"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96">
       <path
          inkscape:connector-curvature="0"
          id="path3846-1"
@@ -207,7 +220,9 @@
     </g>
     <g
        transform="matrix(1.1843294,0,0,-1.1843294,129.47742,184.65362)"
-       id="g3856-3">
+       id="g3856-3"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96">
       <path
          inkscape:connector-curvature="0"
          id="path3858-6"
@@ -216,7 +231,9 @@
     </g>
     <g
        transform="matrix(0.79033151,0,0,-0.79033151,135.12563,173.77571)"
-       id="g3760-7">
+       id="g3760-7"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96">
       <path
          inkscape:connector-curvature="0"
          id="path3762-3"
