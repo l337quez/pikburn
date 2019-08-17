@@ -21,21 +21,37 @@ class Demo(QtGui.QWidget):
         x, y, w, h = 500, 200, 300, 400
         self.setGeometry(x, y, w, h)
 
-
+        
         combo = QtGui.QComboBox(self)
         combo.move(20, 20)
 
         combo.currentIndexChanged.connect(self._cb_currentIndexChanged)
         combo.highlighted.connect(self._cb_highlighted)
 
-        items = ('', 'Lisp', 'C', 'Objective-C', 'Python', 'Java')
+        items = ('', 'PIC16F83', 'PIC16F84', 'PIC16F84A', 'PIC16F87')
         combo.addItems(items)
+        
+
+        # Imiagen posicion del PIC en el ZIF
+
+        pixmap = QtGui.QPixmap("PIN18.png")
+        pixmap = pixmap.scaled(49, 30, QtCore.Qt.KeepAspectRatio) 
+        pixmap.move(50,0)
+        lbl = QtGui.QLabel(self)
+        lbl.setPixmap(pixmap)
+        lbl.setScaledContents(True)
+        
+        #Icono en la ventana
+        self.setWindowIcon(QtGui.QIcon('PikBurn.png'))    
 
     def _cb_currentIndexChanged(self, idx):
         print ('current selected index:', idx)
 
     def _cb_highlighted(self, idx):
         print ('highlighted index:', idx)
+        
+
+
 
     def show_and_raise(self):
         self.show()
@@ -44,7 +60,8 @@ class Demo(QtGui.QWidget):
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
-
+
+
 
 
 
