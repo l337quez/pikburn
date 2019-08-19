@@ -17,13 +17,15 @@ except ImportError:
 class Demo(QtGui.QWidget):
     def __init__(self):
         super(Demo, self).__init__()
+        
 
         x, y, w, h = 500, 200, 300, 400
         self.setGeometry(x, y, w, h)
 
         
         combo = QtGui.QComboBox(self)
-        combo.move(20, 20)
+        #movemos combo (x,y)
+        combo.move(480, 280)
 
         combo.currentIndexChanged.connect(self._cb_currentIndexChanged)
         combo.highlighted.connect(self._cb_highlighted)
@@ -33,16 +35,16 @@ class Demo(QtGui.QWidget):
         
 
         # Imiagen posicion del PIC en el ZIF
+        label=QtGui.QLabel(self)
+        label.setPixmap(QtGui.QPixmap("PIN18.png"))
+        label.move(470, 0)
+        
+       
 
-        pixmap = QtGui.QPixmap("PIN18.png")
-        pixmap = pixmap.scaled(49, 30, QtCore.Qt.KeepAspectRatio) 
-        pixmap.move(50,0)
-        lbl = QtGui.QLabel(self)
-        lbl.setPixmap(pixmap)
-        lbl.setScaledContents(True)
+
         
         #Icono en la ventana
-        self.setWindowIcon(QtGui.QIcon('PikBurn.png'))    
+        self.setWindowIcon(QtGui.QIcon('PikBurn3.png'))    
 
     def _cb_currentIndexChanged(self, idx):
         print ('current selected index:', idx)
@@ -67,7 +69,8 @@ if __name__ == "__main__":
 
     demo = Demo()
     # Tamaño de la ventana
-    demo.resize(400,350)
+    #demo.resize(ancho,alto)
+    demo.resize(600,450)
     #NOmbre de la ventana
     demo.setWindowTitle("PikBurn")
     demo.show_and_raise()
