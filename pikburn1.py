@@ -50,7 +50,11 @@ class TabDialog(QtGui.QDialog):
         # Titulo de la ventana
         self.setWindowTitle("PikBurn")
         # Icono en la ventana
-        self.setWindowIcon(QtGui.QIcon('PikBurn3.png'))    
+        self.setWindowIcon(QtGui.QIcon('PikBurn4.png'))    
+
+
+##REVISAR LOS BOXLAYOUT  http://zetcode.com/gui/pysidetutorial/layoutmanagement/
+
 
 
 class GeneralTab(QtGui.QWidget):
@@ -72,8 +76,29 @@ class GeneralTab(QtGui.QWidget):
         combo.addItems(items)
 
 
+        # Imiagen posicion del PIC en el ZIF
+        label=QtGui.QLabel(self)
+        label.setPixmap(QtGui.QPixmap("PIN18.png"))
+        label.move(470, 0)
+        
+        
+        # A vertical box layout 
+        layout   =   QVBoxLayout ( ) 
+        
+        # Add the widgets to the layout 
+        layout . addWidget ( fileNameLabel ) 
+        layout . addWidget ( combo ) 
+        layout . addWidget ( label ) 
+        
+        # Set layout as the layout for the window 
+        win . setLayout ( layout ) 
 
-
+       
+        
+        
+        
+        
+#USAR UN FORMLAYOUT PARA PODER ACOMODAR T
 
         mainLayout = QtGui.QVBoxLayout()
         mainLayout.addWidget(fileNameLabel)
@@ -181,5 +206,23 @@ if __name__ == '__main__':
     else:
         fileName = "."
 
+
+    
     tabdialog = TabDialog(fileName)
+    # Tamaño de la ventana  (ancho,alto)
+    tabdialog.resize(600,450)   
     sys.exit(tabdialog.exec_()) 
+
+
+
+
+
+
+
+
+
+
+
+
+
+

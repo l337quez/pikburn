@@ -1,0 +1,40 @@
+ 
+instalar python2-pip
+instalar pyserial con pip2serial (porque es python2)
+
+
+==========================================================
+*para saber que puerto esta conectado el programado k150 hacemos 
+dmesg | grep tty
+
+
+y el pl2303 es el programador. Por ejemplo:
+
+[27990.579317] usb 2-1.7.5: pl2303 converter now attached to ttyUSB0
+
+el programador esta disponible en el puerto  ttyUSB0
+
+==========================================================
+
+
+Arguments:
+    "-p x" (or "--port=x"): use serial port x
+    "--pic_type=x": specify type of PIC to be programmed (use '16F84A',
+                  not 'PIC16F84A')
+    "-i file.hex" (or "--input=file.hex"): specify name of HEX file to use
+    "--fuse=fuse_name:value": (optional) specify a value for a programming flag
+    "--ID=PIC_id": (optional) specify ID to be programmed to PIC.
+    "--program": (default) Program the PIC
+    "--verify": Verify only, do not program
+    "-h" (or "--help"): display this message
+
+    
+    
+Comando para usar picpro
+./picpro.py -i ~/Desktop/piscaled.hex --pic_type=16f628a -p /dev/ttyUSB0
+
+
+como usar en el 2019... esto esta hecho en pyethon2 por lo tanto se debe ejecutar de esta forma
+python2 picpro.py -i /home/ronal/git/pikburn/16F84A.HEX --pic_type=16F84A -p /dev/ttyUSB0
+
+Esto quiere decir que hay 2 dependencias python2 y pyserial de python2 que se instala con pip2 
