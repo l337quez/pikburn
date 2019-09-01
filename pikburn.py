@@ -4,6 +4,10 @@
 #revisar https://github.com/shuge/Qt-Python-Binding-Examples/tree/master/common_widgets
 
 import sys
+#para conocer el puerto donde esta conectado
+from serial.tools.list_ports import comports
+import subprocess
+
 try:
     from PySide import QtCore
     from PySide import QtGui
@@ -45,14 +49,28 @@ class Demo(QtGui.QWidget):
         lversion.move(0, 428)
         
         #label de la tarje
-        lboard = QtGui.QLabel(self)
-    
+        #lboard = QtGui.QLabel(self)
+
+ 
 
         
-        #label del puerto
+        #label del puerto USB
+        lusb = QtGui.QLabel(self)
+        lusb.setText("Chip Selector:")
+        lusb.move(0, 271)
+        #self.lusb= QtGui.QLabel("f")
+        #lusb.move(0, 271)
+
+        #lusb.move(0,228)
         #lboard = QtGui.QLabel(self)
         #lboard.setText("Chip Selector:")
-        #lboard.move(30, 10)     
+        #lboard.move(30, 10)  
+
+        
+        
+        
+        
+        
         
         # Imiagen posicion del PIC en el ZIF
         label=QtGui.QLabel(self)
@@ -68,9 +86,7 @@ class Demo(QtGui.QWidget):
         #label1.setText("Chip Selector:")
         #label1.move(480, 271)
         
-        # label 
-        self.label1= QtGui.QLabel("Chip Selector:")
-        label1.move(480, 271)
+
 
         # boton conectar
         self.bconect= QtGui.QPushButton("Conectar",self)
@@ -89,24 +105,31 @@ class Demo(QtGui.QWidget):
         print ('highlighted index:', idx)
         
 
-
+    def port(self,algo):
+            print("Entro al boton")
+            #self.setText("Chip :")
+        
     #Funcion para conocer el puerto y el nombre de manufactura
-    def port(self):
-        #Aqui vemos la direccion /dev/tty****
+    def port(self,Demo):
+        Aqui vemos la direccion /dev/tty****
         puerto=sorted( x[0] for x in comports() )
         print (puerto)
         puerto= ''.join(puerto)
         print (puerto)
         
-        #limpiamos para que no hallan mensajes montadas
+        limpiamos para que no hallan mensajes montadas
         puerto= puerto + "                               "
         print (puerto)
-        #Buscamos la ide
+        Buscamos la ide
         ruta_id=sorted( x[2] for x in comports() )
-        #Convertimos de list a string
+        Convertimos de list a string
         ruta_id= ''.join(ruta_id)
+        
+        puerto usb
+        lusb.setText(puerto)
 
-        #Validamos si hay algo conectado
+
+        Validamos si hay algo conectado
         status_conect=sorted( x[0] for x in comports() )
         if (status_conect == []):
             conexion= int(0)
@@ -116,31 +139,35 @@ class Demo(QtGui.QWidget):
 
         else:
             conexion= int(1)
-            #Buscamos el numero ID del puerto
+            Buscamos el numero ID del puerto
             id1=ruta_id.rindex(":")
             id2=id1 + 1
             id3= id1 + 5
             id_puerto=ruta_id[id2:id3]
-            #Buscamos el nombre de la empresa manufacturera a partir del ID
+            Buscamos el nombre de la empresa manufacturera a partir del ID
             ruta_name_port= subprocess.check_output( "lsusb", stderr=subprocess.STDOUT, shell=True)
-            #Convertimos de bytes a string
+            Convertimos de bytes a string
             ruta_de_port= ruta_name_port.decode("utf-8")
-            #Buscamos el ID del puerto
+            Buscamos el ID del puerto
             ruta_name_port1=ruta_de_port.index(id_puerto)
             ruta_name_port2=ruta_name_port1 + 4
-            #Extraemos el nombre de manufactura
+            Extraemos el nombre de manufactura
             name_port=ruta_de_port[ruta_name_port1:ruta_name_port2]
             ruta_name_port2=ruta_name_port1 + 5
             ruta_name_port3=ruta_name_port1 + 60
             name_board=ruta_de_port[ruta_name_port2:ruta_name_port3]
-            #Buscamos el salto de linea que esta luego de la linea deseada
+            Buscamos el salto de linea que esta luego de la linea deseada
             name_board1=name_board.index("Bus")
-            #Guardamos en board la posicion cero hasta antes de la palabra Bus
+            Guardamos en board la posicion cero hasta antes de la palabra Bus
             board= name_board[0:name_board1] + "                                    "
+            print(name_port)
             
             
-            lboard.setText(board)
-            lboard.move(0, 0)   
+
+            
+            
+            #lboard.setText(board)
+            #lboard.move(0, 0)   
             #name_board = Label(ventana, text =board).place(x=50, y=94)
 
 
