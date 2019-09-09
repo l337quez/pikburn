@@ -47,7 +47,7 @@ class main(QWidget):
         #Icono en la ventana
         #icono=self.setWindowIcon(QIcon('PikBurn3.png')) 
         #QApplication.setWindowIcon('PikBurn3.png')
-        self.setWindowIcon(QIcon('PikBurn3.png'))   
+        #self.setWindowIcon(QIcon('PikBurn3.png'))   
         
         
 

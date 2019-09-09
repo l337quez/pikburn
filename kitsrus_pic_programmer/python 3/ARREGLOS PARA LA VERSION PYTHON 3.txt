@@ -1,0 +1,9 @@
+ 
+Linea 374:
+Se cambio la letra'U' por newline=None.. porque la nueva linea con el comando 'U? ya no tiene soporte en la version 3y da el siguiente error:
+'U' open mode is deprecated in Python 3.4.
+
+ORIGINAL
+file = open(file_name, 'U')
+CAMBIO
+file = open(file_name, newline=None)
