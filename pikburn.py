@@ -42,15 +42,21 @@ class Demo(QtGui.QWidget):
         items = ('','PIC16F84A', 'PIC16f628A', 'PIC16F690')
         combo.addItems(items)
         
-# TODAS LAS TEXT ESIT
-        pantalla=QtGui.QTextEdit(self)
-        pantalla.setGeometry(QtCore.QRect(10, 0, 460, 266))
-        pantalla.setObjectName("pantalla")
-        pantalla.setText("Aqui van el archivo HEX \n falta mostrar el numero de linea esta aqui https://stackoverflow.com/questions/40386194/create-text-area-textedit-with-line-number-in-pyqt.")
-        pantalla.setStyleSheet("background-color: black;")        
+        
+# TODAS LAS TEXT EDIT
+        #pantalla=QtGui.QTextEdit(self)
+        #pantalla.setGeometry(QtCore.QRect(10, 0, 460, 266))
+        #pantalla.setObjectName("pantalla")
+        #pantalla.setText("Aqui van el archivo HEX \n falta mostrar el numero de linea esta aqui https://stackoverflow.com/questions/40386194/create-text-area-textedit-with-line-number-in-pyqt.")
+        #pantalla.setStyleSheet("background-color: black;")        
         #self.pantalla.setStyleSheet("background-color: transparent;")
 
-
+        self.pantalla=QtGui.QTextEdit(self)
+        self.pantalla.setGeometry(QtCore.QRect(10, 0, 460, 266))
+        self.pantalla.setObjectName("pantalla")
+        self.pantalla.setText("Aqui van el archivo HEX \n falta mostrar el numero de linea esta aqui https://stackoverflow.com/questions/40386194/create-text-area-textedit-with-line-number-in-pyqt.")
+        self.pantalla.setStyleSheet("background-color: black;")        
+        #self.pantalla.setStyleSheet("background-color: transparent;")
         
 # TODAS LAS LABELS
         
@@ -114,7 +120,7 @@ class Demo(QtGui.QWidget):
         
         # boton Load
         self.bload= QtGui.QPushButton("Load",self)
-        self.bload.clicked.connect(self.port)
+        self.bload.clicked.connect(self.load_file_hex)
         self.bload.move(10, 340)        
         
         # boton Merge
@@ -187,9 +193,20 @@ class Demo(QtGui.QWidget):
 #file.close()
             
             
-            
-            
-            
+                
+    def load_file_hex(self):
+
+        fname = QtGui.QFileDialog.getOpenFileName()
+        ruta_load=fname[0]
+        print(type(ruta_load))
+        ruta_load_str=''.join(ruta_load)
+        leer_file=open(ruta_load,'r')
+        texto=leer_file.read()
+        leer_file.close()
+        self.pantalla.setText(texto)  
+        print (ruta_load) 
+        print(type(fname))
+        #self.pantalla.setText.toPlainText(fname)            
             
             
         
