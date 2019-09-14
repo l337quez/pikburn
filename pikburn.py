@@ -34,12 +34,19 @@ class Demo(QtGui.QWidget):
         combo = QtGui.QComboBox(self)
         #movemos combo (x,y)
         combo.move(480, 292)
+        #seteamos el numero masximo de items que se pueden ver en el combo
+        combo.setMaxVisibleItems(5)
 
         combo.currentIndexChanged.connect(self._cb_currentIndexChanged)
         combo.highlighted.connect(self._cb_highlighted)
 
         #items = ('', 'PIC16F83', 'PIC16F84', 'PIC16F84A', 'PIC16F87')
-        items = ('','PIC16F84A', 'PIC16f628A', 'PIC16F690')
+        items = ('','PIC12F508', 'PIC12F509', 'PIC12F635', 'PIC12F675', 'PIC12F683', 'PIC16F505', 'PIC16F506', 'PIC16F54', 'PIC16F57', 'PIC16F59', 'PIC16F627',
+                 'PIC16LF627A', 'PIC16F627A', 'PIC16F628', 'PIC16LF628A', 'PIC16F628A', 'PIC16F630', 'PIC16F631', 'PIC16F636', 'PIC16F636-1', 'PIC16F639', 'PIC16F648A',
+                 'PIC16F676', 'PIC16F677', 'PIC16F677-1', 'PIC16F684', 'PIC16F685', 'PIC16F685-1', 'PIC16F687', 'PIC16F687', 'PIC16F687-1', 'PIC16F688', 'PIC16F689',
+                 'PIC16F689-1', 'PIC16F690', 'PIC16F690-1', 'PIC16F716', 'PIC16F72', 'PIC16F73', 'PIC16F74','PIC16F76', 'PIC16F77', 'PIC16F737', 'PIC16F747', 'PIC16F767',
+                 'PIC16F777', 'PIC16F83', 'PIC16F84', 'PIC16F84A', 'PIC16F87', 'PIC16F88', 'PIC16F818', 'PIC16F819', 'PIC16F870', 'PIC16F871', 'PIC16F872', 'PIC16F873',
+                 'PIC16F873A', 'PIC16LF873A', 'PIC16F874', 'PIC16F874A', 'PIC16F876', 'PIC16F876A', 'PIC16F877', 'PIC16F877A')
         combo.addItems(items)
         
         
@@ -158,10 +165,10 @@ class Demo(QtGui.QWidget):
         print ('current selected index:', idx)
         #Chequear esto.. porque cada vez que se agreguen pics por encima de los establecidos esots numeros cambian
         # si la posicion es 1 y 2 entre.. esas posiciones las vemos en la terminal por el print
-        if idx in (1,2) :
+        if idx in (49,50) :
             pixmap=QtGui.QPixmap('PIN18.png')
             self.label.setPixmap(pixmap)
-        elif idx == 3 :   
+        elif idx == 6 :   
             pixmap=QtGui.QPixmap('PIN1413.png')
             self.label.setPixmap(pixmap)
             
