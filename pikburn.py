@@ -61,7 +61,7 @@ class Demo(QtGui.QWidget):
         self.pantalla=QtGui.QTextEdit(self)
         self.pantalla.setGeometry(QtCore.QRect(10, 0, 460, 266))
         self.pantalla.setObjectName("pantalla")
-        self.pantalla.setText("Aqui van el archivo HEX \n falta mostrar el numero de linea esta aqui https://stackoverflow.com/questions/40386194/create-text-area-textedit-with-line-number-in-pyqt.")
+        self.pantalla.setText("Aqui van el archivo HEX, pero en binario y los numeros en la izquierada tambien son binario \n falta mostrar el numero de linea esta aqui https://stackoverflow.com/questions/40386194/create-text-area-textedit-with-line-number-in-pyqt.")
         self.pantalla.setStyleSheet("background-color: black;")        
         #self.pantalla.setStyleSheet("background-color: transparent;")
         
@@ -75,13 +75,13 @@ class Demo(QtGui.QWidget):
         # label autor y version
         lversion = QtGui.QLabel(self)
         lversion.setText("PikBurn V. Alpha 0.001     Developed by: Ronal Forero")
-        lversion.move(0, 428)
+        lversion.move(10, 430)
         
         #label de la tarje
         #lboard = QtGui.QLabel(self)
 
         #label de Mensajes de ERORR o EXITO, mesajes filtraos de la terminal
-        self.msg = QtGui.QLabel("Messages terminal: NO encuentra el dispositivo.. error..",self)
+        self.msg = QtGui.QLabel("Dispositivo K150 no conectado",self)
         self.msg.setStyleSheet("QLabel { background-color : black; color : red; }")
         self.msg.move(10, 274)        
         
@@ -141,9 +141,29 @@ class Demo(QtGui.QWidget):
         self.bprogram.move(210, 340)
         
         # boton Verify
-        self.bprogram= QtGui.QPushButton("Verify",self)
-        self.bprogram.clicked.connect(self.port)
-        self.bprogram.move(310, 340)
+        self.bverify= QtGui.QPushButton("Verify",self)
+        self.bverify.clicked.connect(self.port)
+        self.bverify.move(310, 340)
+        
+        # boton Refresh
+        self.brefresh= QtGui.QPushButton("Refresh",self)
+        self.brefresh.clicked.connect(self.load_file_hex)
+        self.brefresh.move(10, 390)        
+        
+        # boton Save
+        self.bsave= QtGui.QPushButton("Save",self)
+        self.bsave.clicked.connect(self.port)
+        self.bsave.move(110, 390)
+        
+        # boton Read
+        self.bread= QtGui.QPushButton("Read",self)
+        self.bread.clicked.connect(self.port)
+        self.bread.move(210, 390)
+        
+        # boton Blank
+        self.bblank= QtGui.QPushButton("Blank",self)
+        self.bblank.clicked.connect(self.port)
+        self.bblank.move(310, 390)
         
         
 # BARRA DE PROGRESO
@@ -165,13 +185,20 @@ class Demo(QtGui.QWidget):
         print ('current selected index:', idx)
         #Chequear esto.. porque cada vez que se agreguen pics por encima de los establecidos esots numeros cambian
         # si la posicion es 1 y 2 entre.. esas posiciones las vemos en la terminal por el print
-        if idx in (49,50) :
+        if idx in (8,16,49,50) :
+            #PIC16F84A  PIC16F87 PIC16F628A PIC16F54
             pixmap=QtGui.QPixmap('PIN18.png')
             self.label.setPixmap(pixmap)
         elif idx == 6 :   
             pixmap=QtGui.QPixmap('PIN1413.png')
             self.label.setPixmap(pixmap)
-            
+        elif idx == 65 :   
+            #PIC16F877A
+            pixmap=QtGui.QPixmap('PIN40.png')
+            self.label.setPixmap(pixmap)
+        #else:#solo se muestra el zirf
+            #pixmap=QtGui.QPixmap('SOCKETS.png')
+            #self.label.setPixmap(pixmap)
             
             #probamos cambiando color del boton
             self.bconect.setStyleSheet('QPushButton {background-color: #A3C1DA; color: red;}')
@@ -207,12 +234,18 @@ class Demo(QtGui.QWidget):
         ruta_load=fname[0]
         print(type(ruta_load))
         ruta_load_str=''.join(ruta_load)
+        #leemos el archivo HEX
         leer_file=open(ruta_load,'r')
         texto=leer_file.read()
         leer_file.close()
+        #Convertimos hex a binario
+        #n_bits=8
+        #scale=16
+        #texto_bin=bin(int(texto, scale))[2:].zfill(num_of_bits)
+        #decimal=int(texto,16)
+        #texto_bin=bin(decimal)
+        #setiamos en la pantalla
         self.pantalla.setText(texto)  
-        print (ruta_load) 
-        print(type(fname))
         #self.pantalla.setText.toPlainText(fname)            
             
             
