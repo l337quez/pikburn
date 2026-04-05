@@ -16,14 +16,14 @@ try:
     import time
 except ImportError:
     print("Failed to import standard Python libraries.  Please make sure your Python installation is complete and up-to-date.")
-    sys.exit(1)
+    import traceback; traceback.print_stack(); sys.exit(1)
 
 
 try:
     import serial
 except ImportError:
     print("Unable to find Python Serial library.  Please download and install the serial library from http://www.sf.net/projects/pyserial")
-    sys.exit(1)
+    import traceback; traceback.print_stack(); sys.exit(1)
 
 
 #Is this kosher?  I have no idea...
@@ -43,10 +43,11 @@ import hex_file_reader
 
 def print_usage_and_abort():
     print(handle_command_line.__doc__)
-    sys.exit(1)
+    import traceback; traceback.print_stack(); sys.exit(1)
 
 
 def handle_command_line(cmd_args):
+    print("SYS.ARGV IS", cmd_args)
     """micropro: program a PIC using the Kits R Us serial/USB PIC programmer.
 
 Arguments:
@@ -61,10 +62,10 @@ Arguments:
     "-h" (or "--help"): display this message"""
 
     try:
-        (opts, args) = getopt.getopt(cmd_args[1:], 'p:i:h',
-                                     ['port=', 'pic_type=', 'input=',
+        (opts, args) = getopt.getopt(cmd_args[1:], 'p:i:o:h',
+                                     ['port=', 'pic_type=', 'input=', 'output=',
                                       'fuse=', 'ID=', 'help',
-                                      'icsp', 'program', 'verify'])
+                                      'icsp', 'program', 'verify', 'read'])
     except getopt.GetoptError:
         print_usage_and_abort()
     if (len(args) != 0):
@@ -75,6 +76,9 @@ Arguments:
     program_flag = False
     verify_flag = False
     icsp_mode = False
+    read_flag = False
+    hex_file_name = ''
+    output_file_name = ''
     for (opt, value) in opts:
         try:
             if ((opt == '-h') or (opt == '--help')):
@@ -96,16 +100,20 @@ Arguments:
                 program_flag = True
             elif (opt == '--icsp'):
                 icsp_mode = True
+            elif ((opt == '-o') or (opt == '--output')):
+                output_file_name = value
+            elif (opt == '--read'):
+                read_flag = True
             else:
                 print('Error: Unrecognized option "' + opt + '".')
-                sys.exit(1)
+                import traceback; traceback.print_stack(); sys.exit(1)
         except SystemExit:
             raise
         except:
             print('Error: Invalid usage of option "' + opt + '".')
             print_usage_and_abort()
 
-    program = (program_flag or not verify_flag)
+    program = (program_flag or not verify_flag and not read_flag)
 
     # So let's do this thing...
     try:
@@ -114,13 +122,15 @@ Arguments:
                                 hex_file_name = hex_file_name,
                                 fuses = fuses,
                                 ID = ID,
-                                icsp_mode = icsp_mode)
+                                icsp_mode = icsp_mode,
+                                read_mode = read_flag,
+                                output_hex_file = output_file_name)
     except NameError:
         print("Error: Missing required arguments")
         print_usage_and_abort()
 
     program_pic(port, pic_type, hex_file_name, program, fuses = fuses,
-                ID = ID, icsp_mode = icsp_mode)
+                ID = ID, icsp_mode = icsp_mode, read_mode=read_flag, output_hex_file=output_file_name)
 
 
 
@@ -129,8 +139,13 @@ class hex_int(int):
     #self._method_wrap('__xor__')
     #self._method_wrap('__rshift__')
 
-    def __init__(self, value, radix = 16):
-        int.__init__(self, value, radix)
+    def __new__(cls, value, radix=16):
+        if isinstance(value, str):
+            return super().__new__(cls, value, radix)
+        return super().__new__(cls, value)
+
+    def __init__(self, value, radix=16):
+        pass
 
     def __repr__(self):
         if (self >= 0):
@@ -470,13 +485,13 @@ class Chipinfo_Reader(object):
 
 def swab_record(record):
     "Given a record from a hex file, return a new copy with adjacent data bytes swapped."
-    result = []
+    result = bytearray()
 
     for x in range(0, len(record[1]), 2):
-        result += record[1][x + 1]
-        result += record[1][x]
+        result.append(record[1][x + 1])
+        result.append(record[1][x])
 
-    return (record[0], ''.join(result))
+    return (record[0], data_string.data_string(result))
 
 
 #-------------------------------------------------
@@ -541,7 +556,7 @@ def merge_records(records, default_data, base_address = 0):
         result_list += default_data[mark:]
 
     # String-join result_list and return.
-    return ''.join(result_list)
+    return bytes(result_list)
 
 
 #-------------------------------------------------
@@ -561,6 +576,17 @@ class Protocol_Interface(object):
 
     def __init__(self, port):
         self.port = port
+        
+        # Monkey patch port.write to automatically encode correctly
+        self._original_write = port.write
+        def _safe_write(data):
+            if isinstance(data, str):
+                data = data.encode('latin1')
+            elif isinstance(data, list):
+                data = bytes(data)
+            return self._original_write(data)
+        self.port.write = _safe_write
+        
         # We need to set the port timeout to a small value and use
         # polling to simulate variable timeouts.  Why?  Because any
         # time you set the timeout in the serial library, DTR goes
@@ -577,7 +603,7 @@ class Protocol_Interface(object):
     # to sidestep issues with the serial library this is done by
     # polling the serial port's read() method.
     def _read(self, count = 1, timeout = 5):
-        result = ''
+        result = b''
         init_time = time.time()
         end_time = None
         if (timeout != None):
@@ -651,11 +677,11 @@ class Protocol_Interface(object):
             response = self._read(2, timeout=.3)
 
         if (len(response) >= 1):
-            result = (response[0] == 'B')
+            result = (response[0:1] == b'B')
         else:
             result = False
         if (result and (len(response) == 2)):
-            self.firmware_type, = struct.unpack('B', response[1])
+            self.firmware_type, = struct.unpack('B', response[1:2])
         return result
 
 
@@ -663,15 +689,15 @@ class Protocol_Interface(object):
         # Send command 1: if we're at the jump table already this will
         # get us out.  If we're awaiting command start, this will
         # still echo 'Q' and await another command start.
-        self.port.write('\x01')
-        self._expect('Q')
+        self.port.write(b'\x01')
+        self._expect(b'Q')
 
         # Start command, go to jump table.
-        self.port.write('P')
+        self.port.write(b'P')
 
         # Check for acknowledgement
         ack = self._read(1)
-        result = (ack == 'P')
+        result = (ack == b'P')
         if (not result):
             raise self.Invalid_Response_Error("No acknowledgement for command start.")
 
@@ -689,28 +715,28 @@ class Protocol_Interface(object):
 
     def _command_end(self):
         cmd = 1
-        self.port.write(chr(cmd))
+        self.port.write(bytes([cmd]))
         ack = self._read(1, timeout=10)
-        result = (ack == 'Q')
+        result = (ack == b'Q')
         if (not result):
-            if (ack != ''):
+            if (ack != b''):
                 raise self.Invalid_Response_Error("Unexpected response (" +
-                                                    ack +
+                                                    repr(ack) +
                                                     ") in command end.")
             else:
                 raise self.Invalid_Response_Error("No acknowledgement for command end.")
         return result
 
 
-    def echo(self, msg = 'X'):
+    def echo(self, msg = b'X'):
         "Instructs the PIC programmer to echo back the message \
         string.  Returns the PIC programmer's response."
         cmd = 2
         self._command_start()
-        result = ''
+        result = b''
         for c in msg:
-            self.port.write(chr(cmd))
-            self.port.write(c)
+            self.port.write(bytes([cmd]))
+            self.port.write(bytes([c]) if isinstance(c, int) else c)
             response = self._read(1)
             result = result + response
         self._command_end()
@@ -757,7 +783,7 @@ class Protocol_Interface(object):
         response = self._read(1)
         self._command_end()
 
-        result = (response == 'I')
+        result = (response == b'I')
         if (result):
             self.vars = {'rom_size' : rom_size,
                          'eeprom_size' : eeprom_size,
@@ -786,11 +812,11 @@ class Protocol_Interface(object):
 
         self._need_vars()
         if (on):
-            self.port.write(chr(cmd_on))
-            expect = 'V'
+            self.port.write(bytes([cmd_on]))
+            expect = b'V'
         else:
-            self.port.write(chr(cmd_off))
-            expect = 'v'
+            self.port.write(bytes([cmd_off]))
+            expect = b'v'
         response = self._read(1)
         return (response == expect)
 
@@ -801,7 +827,7 @@ class Protocol_Interface(object):
         self._command_start(cmd)
         response = self._read(1)
         self._command_end()
-        return (response == 'V')
+        return (response == b'V')
 
 
     def program_rom(self, data):
@@ -823,12 +849,12 @@ class Protocol_Interface(object):
         word_count_message = struct.pack('>H', word_count)
         self.port.write(word_count_message)
 
-        self._expect('Y', timeout=20)
+        self._expect(b'Y', timeout=20)
         try:
             for i in range(0, (word_count * 2), 32):
                 self.port.write(data[i:(i + 32)])
-                self._expect('Y', timeout=20)
-            self._expect('P', timeout=20)
+                self._expect(b'Y', timeout=20)
+            self._expect(b'P', timeout=20)
         except self.Invalid_Response_Error:
             self.port.flushInput()    #We don't get current address for now.
             return False
@@ -857,16 +883,16 @@ class Protocol_Interface(object):
         byte_count_message = struct.pack('>H', byte_count)
         self.port.write(byte_count_message)
 
-        self._expect('Y', timeout=20)
+        self._expect(b'Y', timeout=20)
         for i in range(0, byte_count, 2):
             self.port.write(data[i:(i + 2)])
-            self._expect('Y', timeout=20)
+            self._expect(b'Y', timeout=20)
         # We must send an extra two bytes, which will have no effect.
         # Why?  I'm not sure.  See protocol doc, and read it backwards.
         # I'm sending zeros because if we did wind up back at the
         # command jump table, then the zeros will have no effect.
-        self.port.write('\x00\x00')
-        self._expect('P', timeout = 20)
+        self.port.write(b'\x00\x00')
+        self._expect(b'P', timeout = 20)
 
         self._set_programming_voltages_command(False)
         self._command_end()
@@ -894,10 +920,10 @@ class Protocol_Interface(object):
             if (len(id) != 4):
                 raise self.Invalid_Value_Error('Should have 4-byte ID for 14 bit core.')
             # Command starts with dual '0' for 14 bit
-            command_body = ('00' + id + 'FFFF' +
-                            struct.pack('<H', fuses[0]) + ('\xff\xff' * 6))
-            response_ok = 'Y'
-            response_bad = 'N'
+            command_body = (b'00' + id + b'FFFF' +
+                            struct.pack('<H', fuses[0]) + (b'\xff\xff' * 6))
+            response_ok = b'Y'
+            response_bad = b'N'
 
         self._command_start()
         self._set_programming_voltages_command(True)
@@ -957,9 +983,9 @@ class Protocol_Interface(object):
         cmd = 13
         self._command_start()
         self._set_programming_voltages_command(True)
-        self.port.write(chr(cmd))
+        self.port.write(bytes([cmd]))
         ack = self._read(1)
-        if (ack != 'C'):
+        if (ack != b'C'):
             raise self.Invalid_Response_Error("No acknowledgement from read_config()")
         response = self._read(26)
         self._set_programming_voltages_command(False)
@@ -981,7 +1007,7 @@ class Protocol_Interface(object):
         self._command_start(cmd)
         response = self._read(1)
         self._command_end()
-        return (response == 'Y')
+        return (response == b'Y')
 
 
     def rom_is_blank(self, high_byte):
@@ -994,21 +1020,21 @@ class Protocol_Interface(object):
         self.port.write(high_byte)
         while True:
             response = self._read(1)
-            if (response == 'Y'):
+            if (response == b'Y'):
                 self._command_end()
                 return True
-            if (response == 'N'):
+            if (response == b'N'):
                 self._command_end()
                 return False
-            if (response == 'C'):
+            if (response == b'C'):
                 self._command_end()
                 return False
-            if (response == 'B'):
+            if (response == b'B'):
                 if (expected_b_bytes <= 0):
                     raise self.Invalid_Response_Error("Received wrong number of 'B' bytes in rom_is_blank()")
                 expected_ff_bytes -= 1
             else:
-                raise self.Invalid_Response_Error("Unexpected byte in rom_is_blank(): " + response)
+                raise self.Invalid_Response_Error("Unexpected byte in rom_is_blank(): " + repr(response))
 
 
     def eeprom_is_blank(self):
@@ -1017,11 +1043,11 @@ class Protocol_Interface(object):
         self._command_start(cmd)
         response = self._read(1)
         self._command_end()
-        if ((response != 'Y') and
-            (response != 'N')):
-            raise self.Invalid_Response_Error('Unexpected response in eeprom_is_blank(): ' + response)
+        if ((response != b'Y') and
+            (response != b'N')):
+            raise self.Invalid_Response_Error('Unexpected response in eeprom_is_blank(): ' + repr(response))
 
-        return (response == 'Y')
+        return (response == b'Y')
 
 
     def program_18fxxxx_fuse(self):
@@ -1034,7 +1060,7 @@ class Protocol_Interface(object):
         # It appears the command will return 'B' on chips for which
         # this isn't appropriate?
         response = self._read(1)
-        result = response == 'Y'
+        result = response == b'Y'
         self._command_end()
 
         return result
@@ -1045,10 +1071,10 @@ class Protocol_Interface(object):
         cmd = 18
 
         self._command_start(cmd)
-        self._expect('A')
+        self._expect(b'A')
         result = False
 
-        self._expect('Y', timeout=None)
+        self._expect(b'Y', timeout=None)
         self._command_end()
         return True
 
@@ -1158,7 +1184,7 @@ class prot_interface_wrangler(object):
 def program_pic(port, pic_type, hex_file_name = '',
                 program = True,
                 fuses = None, ID = None,
-                hex_file = None, icsp_mode = False):
+                hex_file = None, icsp_mode = False, read_mode=False, output_hex_file=''):
     ("Given a serial port ID, PIC type, hex file name, and other optional " +
      "data, attempt to program the hex file data to a PIC in the programmer.")
     try:
@@ -1192,125 +1218,128 @@ def program_pic(port, pic_type, hex_file_name = '',
     rom_blank_bytes = struct.pack('>H', rom_blank_word)
     rom_blank = rom_blank_bytes * chip_info.vars['rom_size']
 
-    eeprom_blank_byte = '\xff'
+    eeprom_blank_byte = b'\xff'
     eeprom_blank = eeprom_blank_byte * chip_info.vars['eeprom_size']
 
     # Read hex file.
-    try:
-        hex_file = hex_file_reader.Hex_File_Reader(hex_file_name)
-    except IOError:
-        print('Unable to find hex file "' + hex_file_name + '".')
-        print('Please verify that the file exists and that you have access to it.')
-        return False
-
-    rom_word_base = 0x0000
-    config_word_base = 0x4000
-    eeprom_word_base = 0x4200
-    rom_word_end = config_word_base
-    config_word_end = 0x4010
-    eeprom_word_end = 0xffff
-
-    # Filter hex file data into ROM, config, and EEPROM:
-    rom_records = range_filter_records(hex_file.records,
-                                       rom_word_base,
-                                       rom_word_end)
-
-    config_records = range_filter_records(hex_file.records,
-                                          config_word_base,
-                                          config_word_end)
-
-    eeprom_records = range_filter_records(hex_file.records,
-                                          eeprom_word_base,
-                                          eeprom_word_end)
-
-    # Try to detect whether the ROM data is big-endian or
-    # little-endian.  If it is little-endian, swap bytes.
-    swap_bytes = None
-    for record in rom_records:
-        if (record[0] % 2 != 0):
-            raise ValueError('ROM record starts on odd address.')
-        for x in range(0, len(record[1]), 2):
-            if ((x + 2) < len(record[1])):
-                BE_word, = struct.unpack('>H', record[1][x:x+2])
-                LE_word, = struct.unpack('<H', record[1][x:x+2])
-
-                BE_ok = ((BE_word & rom_blank_word) == BE_word)
-                LE_ok = ((LE_word & rom_blank_word) == LE_word)
-
-                if (BE_ok and not LE_ok):
-                    swap_bytes = False
-                    break
-                elif (LE_ok and not BE_ok):
-                    swap_bytes = True
-                    break
-                elif (not (LE_ok or BE_ok)):
-                    raise ValueError('Invalid ROM word: ' +
-                                       hex(LE_word) +
-                                       ', ROMblank: ' +
-                                       hex(rom_blank_word))
-        if (swap_bytes != None):
-            break
-    if (swap_bytes):
-        rom_records = list(map(swab_record, rom_records))
-        config_records = list(map(swab_record, config_records))
-
-    # EEPROM is stored in the hex file with one byte per word, so we
-    # need to pick one of the two bytes out of each word to program.
-    # If swap_bytes is true, then file is little-endian, and we want
-    # the first byte of each EEPROM word.  Else we want the second.
-    if (swap_bytes):
-        pick_byte = 0
-    else:
-        pick_byte = 1
-    eeprom_records = [((eeprom_word_base +
-                         ((record[0] - eeprom_word_base) / 2)),
-                        (''.join([record[1][x] for x in range(pick_byte,
-                                                               len(record[1]),
-                                                               2)]))) for record in eeprom_records]
-
-
-
-    # FINALLY!  We create the byte-level data...
-    rom_data = merge_records(rom_records, rom_blank)
-    eeprom_data = merge_records(eeprom_records, eeprom_blank, 0x4200)
-
-    # Extract fuse data, ID data, etc. from fuse records
-    if (ID != None):
-        id_data = ID
-    else:
-        id_data = merge_records(
-            range_filter_records(config_records, 0x4000, 0x4008),
-            ('\x00' * 8))
-        # If this is a 16-bit core, leave id_data as-is.  Else we need to
-        # take every other byte according to endian-ness.
-        if (chip_info.get_core_bits() != 16):
-            id_data = ''.join([id_data[x] for x in range(pick_byte, 8, 2)])
-        ID = id_data
-
-    # Pull fuse data from config records
-    fuse_data = ''.join([struct.pack('>H', word) for word in chip_info.vars['FUSEblank']])
-    fuse_data = merge_records(
-        range_filter_records(config_records, 0x400e, 0x4010),
-        fuse_data,
-        0x400e)
-
-    # Go through each fuse listed in chip info.
-    # Determine its current setting in fuse_value, and accumulate a new
-    # fuse_value by incorporating values specified in (fuses).
-    fuse_error = False
-    fuse_values = [hex_int(struct.unpack('>H', fuse_data[x:x+2])[0])
-                   for x in range(0, len(fuse_data), 2)]
-    #for i in xrange(0, len(fuse_blank)):
-    #fuse_value[i] = struct.unpack('>H', fuse_data[i*2, i*2+2])
-    if (fuses):
-        fuse_settings = chip_info.decode_fuse_data(fuse_values)
-        fuse_settings.update(fuses)
+    if not read_mode:
         try:
-            fuse_values = chip_info.encode_fuse_data(fuse_settings)
-        except Chipinfo_Entry.Fuse_Error:
-            print('Invalid fuse setting.  Fuse names and valid settings for this chip are as follows:')
-            print(chip_info.fuse_doc())
+            hex_file = hex_file_reader.Hex_File_Reader(hex_file_name)
+        except IOError:
+            print('Unable to find hex file "' + hex_file_name + '".')
+            print('Please verify that the file exists and that you have access to it.')
             return False
+        
+        rom_word_base = 0x0000
+        config_word_base = 0x4000
+        eeprom_word_base = 0x4200
+        rom_word_end = config_word_base
+        config_word_end = 0x4010
+        eeprom_word_end = 0xffff
+
+        # Filter hex file data into ROM, config, and EEPROM:
+        rom_records = range_filter_records(hex_file.records,
+                                           rom_word_base,
+                                           rom_word_end)
+
+        config_records = range_filter_records(hex_file.records,
+                                              config_word_base,
+                                              config_word_end)
+
+        eeprom_records = range_filter_records(hex_file.records,
+                                              eeprom_word_base,
+                                              eeprom_word_end)
+
+        # Try to detect whether the ROM data is big-endian or
+        # little-endian.  If it is little-endian, swap bytes.
+        swap_bytes = None
+        for record in rom_records:
+            if (record[0] % 2 != 0):
+                raise ValueError('ROM record starts on odd address.')
+            for x in range(0, len(record[1]), 2):
+                if ((x + 2) < len(record[1])):
+                    BE_word, = struct.unpack('>H', record[1][x:x+2])
+                    LE_word, = struct.unpack('<H', record[1][x:x+2])
+
+                    BE_ok = ((BE_word & rom_blank_word) == BE_word)
+                    LE_ok = ((LE_word & rom_blank_word) == LE_word)
+
+                    if (BE_ok and not LE_ok):
+                        swap_bytes = False
+                        break
+                    elif (LE_ok and not BE_ok):
+                        swap_bytes = True
+                        break
+                    elif (not (LE_ok or BE_ok)):
+                        raise ValueError('Invalid ROM word: ' +
+                                           hex(LE_word) +
+                                           ', ROMblank: ' +
+                                           hex(rom_blank_word))
+            if (swap_bytes != None):
+                break
+        if (swap_bytes):
+            rom_records = list(map(swab_record, rom_records))
+            config_records = list(map(swab_record, config_records))
+
+        # EEPROM is stored in the hex file with one byte per word, so we
+        # need to pick one of the two bytes out of each word to program.
+        # If swap_bytes is true, then file is little-endian, and we want
+        # the first byte of each EEPROM word.  Else we want the second.
+        if (swap_bytes):
+            pick_byte = 0
+        else:
+            pick_byte = 1
+        eeprom_records = [((eeprom_word_base +
+                             ((record[0] - eeprom_word_base) // 2)),
+                            data_string.data_string(bytes([record[1][x] for x in range(pick_byte,
+                                                                   len(record[1]),
+                                                                   2)]))) for record in eeprom_records]
+
+
+
+        # FINALLY!  We create the byte-level data...
+        rom_data = merge_records(rom_records, rom_blank)
+        eeprom_data = merge_records(eeprom_records, eeprom_blank, 0x4200)
+
+        # Extract fuse data, ID data, etc. from fuse records
+        if (ID != None):
+            id_data = ID
+        else:
+            id_data = merge_records(
+                range_filter_records(config_records, 0x4000, 0x4008),
+                (b'\x00' * 8))
+            # If this is a 16-bit core, leave id_data as-is.  Else we need to
+            # take every other byte according to endian-ness.
+            if (chip_info.get_core_bits() != 16):
+                id_data = data_string.data_string(bytes([id_data[x] for x in range(pick_byte, 8, 2)]))
+            ID = id_data
+
+        # Pull fuse data from config records
+        fuse_data = b''.join([struct.pack('>H', word) for word in chip_info.vars['FUSEblank']])
+        fuse_data = merge_records(
+            range_filter_records(config_records, 0x400e, 0x4010),
+            fuse_data,
+            0x400e)
+
+        # Go through each fuse listed in chip info.
+        # Determine its current setting in fuse_value, and accumulate a new
+        # fuse_value by incorporating values specified in (fuses).
+        fuse_error = False
+        fuse_values = [hex_int(struct.unpack('>H', fuse_data[x:x+2])[0])
+                       for x in range(0, len(fuse_data), 2)]
+        #for i in xrange(0, len(fuse_blank)):
+        #fuse_value[i] = struct.unpack('>H', fuse_data[i*2, i*2+2])
+        if (fuses):
+            fuse_settings = chip_info.decode_fuse_data(fuse_values)
+            fuse_settings.update(fuses)
+            try:
+                fuse_values = chip_info.encode_fuse_data(fuse_settings)
+            except Chipinfo_Entry.Fuse_Error:
+                print('Invalid fuse setting.  Fuse names and valid settings for this chip are as follows:')
+                print(chip_info.fuse_doc())
+                return False
+
+    
 
 
     try:
@@ -1319,8 +1348,9 @@ def program_pic(port, pic_type, hex_file_name = '',
         prot_interface = Protocol_Interface(s)
 
         # Verify that communications are functioning
-        response = prot_interface.echo(hex_file_name)
-        if (response != hex_file_name):
+        expected_echo = hex_file_name.encode('latin1') if isinstance(hex_file_name, str) else hex_file_name
+        response = prot_interface.echo(expected_echo)
+        if (response != expected_echo):
             print('Invalid response received from PIC programmer.')
             print('Please check that device is properly connected and working.')
     except Protocol_Interface.Invalid_Response_Error:
@@ -1339,6 +1369,34 @@ def program_pic(port, pic_type, hex_file_name = '',
         programming_vars['power_sequence'] = power_sequence
 
     prot_interface.init_programming_vars(**programming_vars)
+
+    if read_mode:
+        print('Reading ROM from chip')
+        pic_rom_data = prot_interface.read_rom()
+        
+        with open(output_hex_file, 'w') as f:
+            for addr in range(0, len(pic_rom_data), 16):
+                chunk = pic_rom_data[addr:addr+16]
+                if not chunk: break
+                byte_count = len(chunk)
+                addr_hi = (addr >> 8) & 0xFF
+                addr_lo = addr & 0xFF
+                record_type = 0x00
+                
+                checksum = byte_count + addr_hi + addr_lo + record_type
+                
+                data_hex = ""
+                for b in chunk:
+                    val = b if isinstance(b, int) else ord(b)
+                    checksum += val
+                    data_hex += f"{val:02X}"
+                
+                checksum = (-checksum) & 0xFF
+                f.write(f":{byte_count:02X}{addr:04X}{record_type:02X}{data_hex}{checksum:02X}\n")
+            f.write(":00000001FF\n")
+        
+        print('Read successful.')
+        return True
 
     try:
         # Instruct user to insert chip

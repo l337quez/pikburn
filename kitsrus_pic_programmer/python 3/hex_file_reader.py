@@ -11,7 +11,7 @@ class Hex_File_Reader(object):
 
     def __init__(self, file_name = '', file = None):
         if (file == None):
-            file = open(file_name, 'U')
+            file = open(file_name, 'r')
 
         ext_address = 0
         self.records = []
@@ -31,7 +31,7 @@ class Hex_File_Reader(object):
                 length = int(length_str, 16)
                 address = int(address_str, 16)
                 type = int(type_str, 16)
-                data = data_string.data_string(''.join([chr(int(data_str[x:x+2], 16)) for x in range(0, len(data_str), 2)]))
+                data = data_string.data_string(bytes(int(data_str[x:x+2], 16) for x in range(0, len(data_str), 2)))
                 checksum = int(checksum_str, 16)
 
                 if (length != len(data)):
@@ -73,5 +73,5 @@ class Hex_File_Reader(object):
 
             data_list[address:address + len(data)] = data
 
-        return data_string.data_string(''.join(data_list))
+        return data_string.data_string(bytes(data_list))
  

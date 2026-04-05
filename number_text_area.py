@@ -2,10 +2,11 @@
 # QcodeEditor.py by acbetter.
 # -*- coding: utf-8 -*-
 
-from PyQt5.QtCore import Qt, QRect, QSize
-from PyQt5.QtWidgets import QWidget, QPlainTextEdit, QTextEdit
-from PyQt5.QtGui import QColor, QPainter, QTextFormat
-#try:
+from PySide6.QtCore import Qt, QRect, QSize
+from PySide6.QtWidgets import QWidget, QPlainTextEdit, QTextEdit
+from PySide6.QtGui import QColor, QPainter, QTextFormat
+
+#try:
     #from PySide import QtCore
     #from PySide import QtGui
 #except ImportError:
@@ -40,7 +41,7 @@ class QCodeEditor(QPlainTextEdit):
         while max_value >= 10:
             max_value /= 10
             digits += 1
-        space = 3 + self.fontMetrics().width('9') * digits
+        space = 3 + self.fontMetrics().horizontalAdvance('9') * digits
         return space
 
     def updateLineNumberAreaWidth(self, _):
@@ -63,7 +64,7 @@ class QCodeEditor(QPlainTextEdit):
         extraSelections = []
         if not self.isReadOnly():
             selection = QTextEdit.ExtraSelection()
-            lineColor = QColor(Qt.yellow).lighter(160)
+            lineColor = QColor(Qt.GlobalColor.darkGray).lighter(160)
             selection.format.setBackground(lineColor)
             selection.format.setProperty(QTextFormat.FullWidthSelection, True)
             selection.cursor = self.textCursor()
@@ -74,7 +75,7 @@ class QCodeEditor(QPlainTextEdit):
     def lineNumberAreaPaintEvent(self, event):
         painter = QPainter(self.lineNumberArea)
 
-        painter.fillRect(event.rect(), Qt.lightGray)
+        painter.fillRect(event.rect(), Qt.GlobalColor.lightGray)
 
         block = self.firstVisibleBlock()
         blockNumber = block.blockNumber()
@@ -97,9 +98,9 @@ class QCodeEditor(QPlainTextEdit):
 
 if __name__ == '__main__':
     import sys
-    from PyQt5.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication
 
     app = QApplication(sys.argv)
     codeEditor = QCodeEditor()
     codeEditor.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
