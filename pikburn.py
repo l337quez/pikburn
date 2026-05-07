@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sys
+import sys, os
 from serial.tools.list_ports import comports
 import subprocess
 
@@ -44,7 +44,6 @@ class Demo(QtWidgets.QWidget):
         #seteamos el numero masximo de items que se pueden ver en el combo
         self.combo.setMaxVisibleItems(5)
 
-        self.combo.currentIndexChanged.connect(self._cb_currentIndexChanged)
         self.combo.highlighted.connect(self._cb_highlighted)
         self.combo.setFixedHeight(35)
         self.combo.setFixedWidth(100)
@@ -102,17 +101,35 @@ class Demo(QtWidgets.QWidget):
 
 
         
-        # Imiagen posicion del PIC en el ZIF
-        self.label=QtWidgets.QLabel(self.tab_k150)
-        self.label.setPixmap(QtGui.QPixmap("SOCKETS.png"))
+        # Imagen posicion del PIC en el ZIF
+        # Imagen posicion del PIC en el ZIF
+        self.label = QtWidgets.QLabel(self.tab_k150)
+        base_path = os.path.dirname(__file__) 
+        # El archivo en assets/BITMAP es .bmp, no .png
+        image_path = os.path.join(base_path, "assets", "BITMAP", "SOCKETS.bmp")
+        pixmap = QtGui.QPixmap(image_path)
+        
+        self.label.setScaledContents(True)
+        self.label.resize(114, 266)
         self.label.move(470, 0)
+
+        if not pixmap.isNull():
+            self.label.setPixmap(pixmap)
+        else:
+            self.label.setText("Imagen no encontrada")
+            print(f"Error: No se pudo cargar {image_path}")
+
+        # Conectar señal del combo ahora que todos los widgets existen
+        self.combo.currentIndexChanged.connect(self._cb_currentIndexChanged)
+        
 
         #self.bconect= QtWidgets.QPushButton("Conectar",self)
         #self.bconect.clicked.connect(self.port)
         #self.bconect.move(10, 10)        
             
         #Icono en la ventana
-        self.setWindowIcon(QtGui.QIcon('PikBurn3.png'))    
+        image_path = os.path.join(base_path, "assets", "banner", "PikBurn.png")
+        self.setWindowIcon(QtGui.QIcon(image_path))    
         
         #label 
         #label1 = QtWidgets.QLabel(self)
@@ -183,26 +200,36 @@ class Demo(QtWidgets.QWidget):
         
 # Funcion para conocer la posicion del combobox del selector de pic
     def _cb_currentIndexChanged(self, idx):
-        print ('current selected index:', idx)
-        #Chequear esto.. porque cada vez que se agreguen pics por encima de los establecidos esots numeros cambian
-        # si la posicion es 1 y 2 entre.. esas posiciones las vemos en la terminal por el print
-        if idx in (8,16,49,50) :
-            #PIC16F84A  PIC16F87 PIC16F628A PIC16F54
-            pixmap=QtGui.QPixmap('PIN18.png')
-            self.label.setPixmap(pixmap)
-        elif idx == 6 :   
-            pixmap=QtGui.QPixmap('PIN1413.png')
-            self.label.setPixmap(pixmap)
-        elif idx == 65 :   
-            #PIC16F877A
-            pixmap=QtGui.QPixmap('PIN40.png')
-            self.label.setPixmap(pixmap)
-        #else:#solo se muestra el zirf
-            #pixmap=QtGui.QPixmap('SOCKETS.png')
-            #self.label.setPixmap(pixmap)
+        # Evitar errores si se activa antes de que self.label exista
+        if not hasattr(self, 'label'):
+            return
+
+        base_path = os.path.dirname(__file__) 
+        print('current selected index:', idx)
+        
+        # Mapeo de índices a imágenes de pines (ajustado a .bmp en assets/BITMAP)
+        image_name = "SOCKETS.bmp"
+        
+        if idx in (8, 16, 49, 50):
+            image_name = "PIN18.bmp"
+        elif idx == 6:
+            image_name = "PIN1413.bmp"
+        elif idx == 65:
+            image_name = "PIN40.bmp"
             
-            #probamos cambiando color del boton
-            self.bconect.setStyleSheet('QPushButton {background-color: #A3C1DA; color: red;}')
+        image_path = os.path.join(base_path, "assets", "BITMAP", image_name)
+        pixmap = QtGui.QPixmap(image_path)
+        
+        if not pixmap.isNull():
+            self.label.setPixmap(pixmap)
+        else:
+            print(f"Advertencia: No se pudo cargar {image_path}")
+            default_path = os.path.join(base_path, "assets", "BITMAP", "SOCKETS.bmp")
+            self.label.setPixmap(QtGui.QPixmap(default_path))
+            
+        # Corregimos el error de bconect si no existe aún (por si acaso)
+        if hasattr(self, 'bconect'):
+            self.bconect.setStyleSheet('QPushButton {background-color: #A3C1DA; color: black;}')
             
 
 

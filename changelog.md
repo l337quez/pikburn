@@ -24,3 +24,6 @@
 - migration from python 2 to python 3 
 - migration from pyside 4 to pyside 6
 - add poetry
+
+#### ⟳ Changelog Alpha version 0.1.3 (2026-04-05)
+- add search in combo box selector of pic
